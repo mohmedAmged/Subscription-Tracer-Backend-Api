@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
+import RevokedToken from "../models/revokedToken.model.js";
 
 export const signUp = async(req,res, next)=>{
     const session = await mongoose.startSession();
@@ -74,4 +75,28 @@ export const signIn = async(req,res, next)=>{
         next(error)
     }
 }
-// export const signOut = async(req,res, next)=>{}
+export const signOut = async(req,res, next)=>{
+    try {
+        const token = req.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+        if (!token){
+            const error = new Error('Token missing');
+            error.statusCode = 401;
+            throw error;
+        }
+        const decoded = jwt.decode(token);
+        if (!decoded || !decoded.exp) {
+            const error = new Error('Invalid token');
+            error.statusCode = 400;
+            throw error;
+        }
+        const expiresAt = new Date(decoded.exp * 1000);
+        await RevokedToken.create({ token, expiresAt });
+        res.status(200).json({
+            success: true,
+            message: 'User signed out successfully',
+            data: null
+        })
+    } catch (error) {
+        next(error)
+    }
+}

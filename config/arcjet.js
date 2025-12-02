@@ -11,7 +11,7 @@ const aj = arcjet({
             mode: "LIVE",
             allow: [
                 "CATEGORY:SEARCH_ENGINE", // Google, Bing, etc
-                "CATEGORY:Postman",
+                "CATEGORY:POSTMAN",
             ],
         }),
         // Create a token bucket rate limit. Other algorithms are supported.

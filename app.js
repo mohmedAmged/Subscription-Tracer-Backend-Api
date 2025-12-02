@@ -17,7 +17,7 @@ app.use(arcjetMiddleware)
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
-app.use('/api/v1/subscriptions', subscriptionRouter);
+app.use('/api/v1/subscription', subscriptionRouter);
 
 app.use(errorMiddleware)
 
@@ -27,7 +27,7 @@ res.send('welcome to the subscription tracer api!');
 
 app.listen(PORT, async()=>{
     console.log(`subscription tracer api work on http://localhost:${PORT}`);
-
+// console.log(Date());
     await connectToDatabase()
 });
 export default app;
