@@ -8,17 +8,37 @@ export const createSubscription = async (req, res, next) =>{
             ...req.body,
             user: req.user._id
         })
-        const {workflowRunId} =await workflowClient.trigger({
-            url: `${SERVER_URL}/api/v1/workflows/subscription/reminder`,
-            body:{
-                subscriptionId: subscription.id,
-            },
-            headers:{
-                'content-type': 'application/json'
-            }, 
-            retries: 0
-        })
-        res.status(201).json({success: true, message: "Subscription created successfully", data: {subscription, workflowRunId} })
+        let origin = SERVER_URL;
+        if (!origin || !/^https?:\/\//i.test(origin)) {
+            const forwardedProto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0];
+            origin = `${forwardedProto}://${req.get('host')}`;
+        }
+        const destination = `${origin.replace(/\/$/, '')}/api/v1/workflows/subscription/reminder`;
+        let workflowRunId = null;
+        try {
+            const result = await workflowClient.trigger({
+                url: destination,
+                body: { subscriptionId: subscription.id },
+                headers: { 'content-type': 'application/json' },
+                retries: 0
+            });
+            workflowRunId = result?.workflowRunId ?? result?.run?.id ?? null;
+        } catch (wfError) {
+            // non-fatal: log and continue so subscription creation still succeeds
+            console.error('Failed to trigger workflow (non-fatal):', wfError?.message || wfError);
+        }
+        res.status(201).json({success: true, message: "Subscription created successfully", data: { subscription, workflowRunId } })
+        // const {workflowRunId} =await workflowClient.trigger({
+        //     url: `${SERVER_URL}/api/v1/workflows/subscription/reminder`,
+        //     body:{
+        //         subscriptionId: subscription.id,
+        //     },
+        //     headers:{
+        //         'content-type': 'application/json'
+        //     }, 
+        //     retries: 0
+        // })
+        // res.status(201).json({success: true, message: "Subscription created successfully", data: {subscription, workflowRunId} })
     } catch (error) {
         next(error);
     }
